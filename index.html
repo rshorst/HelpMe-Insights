@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Doing ~ HelpMe — How retrieval works</title>
+<style>
+  :root{
+    --navy:#1f4e79; --blue:#2e5496; --ink:#22303c; --muted:#5b6b78;
+    --line:#d9e2ec; --bg:#ffffff; --soft:#eef4fb; --soft2:#f5f8fc;
+    --accent:#1a73c2; --accent-bg:#e3f0fb; --warn:#8a6300; --warn-bg:#fff7e6;
+    --good:#2f6b2f; --good-bg:#eef6ee; --dim:#9aa7b2; --radius:8px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--soft2);color:var(--ink);
+    font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.6;font-size:16px;}
+  .wrap{max-width:860px;margin:0 auto;padding:30px 20px 64px;}
+  .eyebrow{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--blue);font-weight:700;}
+  header h1{color:var(--navy);font-size:28px;margin:4px 0 4px;line-height:1.15;}
+  header p.sub{color:var(--muted);font-size:17px;margin:0;}
+  .rule{height:3px;width:54px;background:var(--accent);border-radius:3px;margin:16px 0 22px;}
+  /* intro */
+  .intro{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:18px 22px;}
+  .intro .brief{font-size:15.5px;margin:0;}
+  .seam{background:#fbf4e8;border-radius:12px;padding:18px 22px;margin:12px 0;}
+  .seam-h{font-size:19px;font-weight:700;color:#8a6a1f;margin-bottom:8px;}
+  .seam-p{font-size:15px;line-height:1.6;color:var(--ink);margin:0 0 12px;}
+  .seam-p:last-child{margin-bottom:0;}
+  /* accordion */
+  .acc{border:1px solid var(--line);border-radius:12px;background:#fff;margin:12px 0;overflow:hidden;
+    transition:border-color .2s,box-shadow .2s;}
+  .acc:hover{border-color:#bcd0e6;}
+  .acc.open{border-color:#bcd9f2;box-shadow:0 1px 2px rgba(31,78,121,.06);}
+  .acc-head{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:14px;
+    width:100%;padding:16px 18px;}
+  .acc-head:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;border-radius:12px;}
+  .acc.open .acc-head{background:var(--soft);}
+  .acc-n{flex-shrink:0;width:30px;height:30px;border-radius:50%;background:var(--navy);color:#fff;
+    font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+  .acc.open .acc-n{background:var(--accent);}
+  .acc-t{flex:1;display:flex;flex-direction:column;gap:1px;min-width:0;}
+  .acc-title{font-size:17px;font-weight:700;color:var(--navy);line-height:1.25;}
+  .acc-sub{font-size:13px;color:var(--muted);}
+  .acc-chev{flex-shrink:0;color:var(--blue);font-size:15px;transition:transform .25s;}
+  .acc.open .acc-chev{transform:rotate(90deg);}
+  .acc-body{display:none;padding:6px 18px 20px;}
+  .acc.open .acc-body{display:block;animation:rev .25s ease;}
+  @keyframes rev{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:none;}}
+  .lead{color:var(--muted);font-size:15px;margin:6px 0 18px;}
+  .brief{background:var(--soft);border-radius:8px;padding:14px 18px;margin:0 0 4px;font-size:15px;}
+  .concepts{background:var(--soft);border-radius:8px;padding:13px 17px;margin-top:14px;}
+  .concepts p{font-size:13.5px;margin:0 0 9px;line-height:1.5;}
+  .concepts p:last-child{margin-bottom:0;}
+  .concepts strong{color:var(--navy);}
+  /* simulator */
+  .preset{font-size:13px;padding:7px 11px;border:1px solid var(--line);border-radius:var(--radius);
+    background:#fff;cursor:pointer;margin:0 7px 7px 0;color:var(--ink);}
+  .preset:hover{background:var(--soft);border-color:var(--blue);}
+  input[type=text]{width:100%;height:38px;padding:0 12px;border:1px solid var(--line);
+    border-radius:var(--radius);font-size:15px;color:var(--ink);}
+  input[type=text]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg);}
+  input[type=range]{width:100%;accent-color:var(--accent);}
+  .doc{display:flex;align-items:center;gap:12px;padding:11px 13px;border:1px solid var(--line);
+    border-left:3px solid var(--line);border-radius:var(--radius);margin-bottom:8px;background:#fff;
+    transition:background .25s,opacity .25s,border-color .25s;}
+  .doc.on{background:var(--accent-bg);border-color:#bcd9f2;border-left-color:var(--accent);}
+  .doc.off{opacity:.5;}
+  .doc .title{flex-basis:250px;flex-shrink:0;font-size:14px;}
+  .track{flex:1;height:11px;background:#e6edf5;border-radius:6px;overflow:hidden;}
+  .fill{height:100%;width:0;background:var(--dim);transition:width .35s ease,background .25s ease;}
+  .doc.on .fill{background:var(--accent);}
+  .doc.off .fill{background:#b7c2cd;}
+  .badge{font-size:11px;padding:3px 10px;border-radius:6px;white-space:nowrap;min-width:108px;text-align:center;font-weight:600;}
+  .badge.bon{background:var(--accent);color:#fff;}
+  .badge.boff{background:var(--soft2);color:var(--dim);font-weight:400;}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:12px;font-size:12px;color:var(--muted);}
+  .sw{display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:1px;margin-right:5px;}
+  .summary{font-size:14px;color:var(--muted);margin-top:12px;min-height:20px;}
+  .hint{font-size:12px;color:var(--dim);margin:10px 0 0;}
+  /* flip cards */
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;}
+  .card{border:1px solid var(--line);border-radius:10px;background:#fff;min-height:150px;display:flex;transition:background .2s,border-color .2s;}
+  .card:hover{border-color:var(--blue);}
+  .card button{all:unset;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;gap:14px;width:100%;padding:16px 17px;box-sizing:border-box;}
+  .card button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:10px;}
+  .card .myth{color:var(--ink);font-size:15px;line-height:1.45;}
+  .card .answer{display:none;}
+  .card .tagx{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--good);font-weight:700;margin-bottom:5px;}
+  .card .mech{font-size:14px;color:var(--ink);line-height:1.5;}
+  .card .flip{font-size:12px;color:var(--blue);}
+  .card .flip .back{display:none;}
+  .card.flipped{background:var(--good-bg);border-color:#bcd9bc;}
+  .card.flipped:hover{border-color:#9cc79c;}
+  .card.flipped .myth{display:none;}
+  .card.flipped .answer{display:block;}
+  .card.flipped .flip{color:var(--good);}
+  .card.flipped .flip .now{display:none;}
+  .card.flipped .flip .back{display:inline;}
+  /* rewriter */
+  .rw{border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:10px;background:#fff;}
+  .rw .human{font-size:15px;}
+  .rw .verb{background:#fde8e3;color:#b04a3a;padding:0 4px;border-radius:4px;font-weight:600;}
+  .rw .mechbox{display:none;margin-top:10px;padding:10px 12px;background:var(--good-bg);border-radius:8px;font-size:14px;}
+  .rw .mechbox .why{color:var(--muted);font-size:13px;margin-top:6px;}
+  .btn{font-size:13px;padding:6px 12px;border:1px solid var(--blue);color:var(--blue);background:#fff;border-radius:var(--radius);cursor:pointer;margin-top:10px;}
+  .btn:hover{background:var(--soft);}
+  /* checklist */
+  .chk{display:flex;gap:11px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--line);}
+  .chk:last-child{border-bottom:none;}
+  .chk input{margin-top:4px;width:17px;height:17px;accent-color:var(--accent);flex-shrink:0;}
+  .chk .body{flex:1;}
+  .chk .ttl{font-size:15px;font-weight:600;color:var(--ink);}
+  .chk .desc{font-size:14px;color:var(--muted);}
+  .chk .try{font-size:13px;color:var(--ink);background:var(--soft);border-radius:6px;padding:6px 10px;margin-top:6px;display:inline-flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .chk .try code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;}
+  .chk .lim{font-size:12.5px;color:var(--muted);margin-top:6px;line-height:1.45;}
+  .chk .lim strong{color:var(--warn);font-weight:600;}
+  .copy{font-size:11px;border:1px solid var(--line);background:#fff;border-radius:5px;padding:2px 7px;cursor:pointer;color:var(--blue);}
+  .copy:hover{border-color:var(--blue);}
+  .group-h{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--blue);font-weight:700;margin:6px 0 2px;}
+  /* compare */
+  .compare{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:4px 0 14px;}
+  .opt{border:1px solid var(--line);border-radius:10px;padding:14px 16px;background:#fff;}
+  .opt h3{font-size:15px;color:var(--navy);margin:0 0 4px;}
+  .opt .lab{font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin:10px 0 3px;}
+  .opt .lab.s{color:var(--good);}
+  .opt .lab.w{color:#b04a3a;}
+  .opt ul{margin:0;padding-left:17px;}
+  .opt li{font-size:13.5px;margin-bottom:4px;line-height:1.45;}
+  a{color:var(--accent);}
+  /* meta */
+  .acc.meta{background:#fbf4e8;border-color:#ecdcb6;}
+  .acc.meta:hover{border-color:#e6d4ad;}
+  .acc.meta.open{border-color:#e6d4ad;box-shadow:0 1px 2px rgba(138,106,31,.08);}
+  .acc.meta.open .acc-head{background:#fbf4e8;}
+  .acc.meta .acc-n{background:#b8902f;font-size:15px;}
+  .princ{margin:14px 0 0;padding:0;list-style:none;}
+  .princ li{font-size:14px;line-height:1.5;padding:9px 0;border-top:1px solid var(--line);}
+  .princ li:first-child{border-top:none;}
+  .princ strong{color:var(--navy);}
+  footer{color:var(--muted);font-size:13px;text-align:center;margin-top:30px;}
+  @media (max-width:560px){.doc .title{flex-basis:150px}.compare{grid-template-columns:1fr;}.card .myth{font-size:13px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">ETEC 531 · interactive companion</div>
+    <h1>How HelpMe actually works</h1>
+    <p class="sub">Poke at it; that is the point. Tap a panel to open it.</p>
+    <div class="rule"></div>
+  </header>
+
+  <div class="seam">
+    <div class="seam-h">The proposition: Seam-ful AI for learning</div>
+    <p class="seam-p">HelpMe can't out-muscle ChatGPT or Claude, and it shouldn't try. The big models are
+      built to feel seamless — easy to trust, easy to hand your thinking over to. But a course is optimised
+      for understanding, not output, and for that a tool you can see through beats a more capable one you can't.</p>
+    <p class="seam-p">Legible failure can be a very good teacher. Let's identify the friction in the system
+      that maps onto a real mechanism. RAG matters because retrieval is a layer whose seams you can actually
+      inspect — the chunks, the citations, what got pulled and what got left out. You can't see through a
+      model's weights, but you can see through retrieval. HelpMe's silent failures are visible weaknesses, and
+      visible weakness is where understanding gets built — judgment you then carry into the seamless tools whose
+      weaknesses and silent failures won't be as visible. Build skills here that can be used elsewhere.</p>
+  </div>
+
+  <div class="acc">
+    <button class="acc-head" aria-expanded="false">
+      <span class="acc-n">1</span>
+      <span class="acc-t"><span class="acc-title">Watch it pull — and drop</span><span class="acc-sub">See which sources get retrieved, and which silently fail.</span></span>
+      <span class="acc-chev">&#9656;</span>
+    </button>
+    <div class="acc-body">
+      <p class="brief"><strong>The one idea underneath everything:</strong> HelpMe does not read whole
+      papers. Ahead of time, each reading is split into short passages — <strong>chunks</strong> — and an
+      embedding model turns every chunk into a <strong>vector</strong>, a string of numbers that captures
+      its meaning, stored in a database. When you prompt it, your words are embedded into a vector too, and
+      the system runs a <strong>semantic search</strong> for the chunks whose vectors sit closest to yours.
+      Only the top handful are placed in the <strong>context window</strong> with your prompt, and the model
+      writes its answer from that. Anything not retrieved stays invisible to it — which is why some of your
+      sources never appear, and why rewording your prompt changes what comes back.</p>
+    <svg viewBox="0 0 680 186" role="img" aria-labelledby="ragt ragd" style="width:100%;max-width:600px;height:auto;display:block;margin:16px auto 2px;">
+      <title id="ragt">How retrieval works</title>
+      <desc id="ragd">Your prompt becomes a vector; a semantic search keeps the few closest chunks from the indexed library; the model writes its answer from those.</desc>
+      <defs>
+        <marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+          <path d="M0,0 L9,4.5 L0,9 z" fill="#9aa7b2"/>
+        </marker>
+      </defs>
+      <rect x="14" y="64" width="122" height="44" rx="22" fill="#e3f0fb" stroke="#1a73c2" stroke-width="1.4"/>
+      <text x="75" y="91" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#1f4e79">Your prompt</text>
+      <text x="75" y="128" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#5b6b78">becomes a vector</text>
+      <line x1="140" y1="86" x2="222" y2="86" stroke="#9aa7b2" stroke-width="1.5" marker-end="url(#ah)"/>
+      <text x="344" y="30" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="600" fill="#1f4e79">Indexed chunks</text>
+      <rect x="252" y="40" width="184" height="16" rx="4" fill="#eef4fb" stroke="#d9e2ec"/>
+      <text x="344" y="52" text-anchor="middle" font-family="sans-serif" font-size="9.5" fill="#9aa7b2">left out</text>
+      <rect x="252" y="62" width="184" height="16" rx="4" fill="#1a73c2"/>
+      <text x="344" y="74" text-anchor="middle" font-family="sans-serif" font-size="9.5" fill="#ffffff">pulled in</text>
+      <rect x="252" y="84" width="184" height="16" rx="4" fill="#eef4fb" stroke="#d9e2ec"/>
+      <text x="344" y="96" text-anchor="middle" font-family="sans-serif" font-size="9.5" fill="#9aa7b2">left out</text>
+      <rect x="252" y="106" width="184" height="16" rx="4" fill="#1a73c2"/>
+      <text x="344" y="118" text-anchor="middle" font-family="sans-serif" font-size="9.5" fill="#ffffff">pulled in</text>
+      <rect x="252" y="128" width="184" height="16" rx="4" fill="#eef4fb" stroke="#d9e2ec"/>
+      <text x="344" y="140" text-anchor="middle" font-family="sans-serif" font-size="9.5" fill="#9aa7b2">left out</text>
+      <text x="344" y="168" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#5b6b78">semantic search keeps the closest few</text>
+      <line x1="442" y1="86" x2="520" y2="86" stroke="#9aa7b2" stroke-width="1.5" marker-end="url(#ah)"/>
+      <rect x="528" y="64" width="122" height="44" rx="22" fill="#1f4e79"/>
+      <text x="589" y="91" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#ffffff">Answer</text>
+      <text x="589" y="128" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#5b6b78">from those few</text>
+    </svg>
+      <p class="lead">Pick a query and watch which sources light up. Slide the top-k. Nothing
+        <em>chooses</em> to leave a source out — its chunks just rank too low to be pulled in. When a
+        relevant one stays dark, that is a <strong>silent failure</strong>: the answer was in the library,
+        but the model never saw it — and it will still answer confidently without it.</p>
+      <div id="presets" style="display:flex;flex-wrap:wrap;margin-bottom:10px;"></div>
+      <input id="q" type="text" placeholder="Type a query, or pick one above" aria-label="Query"/>
+      <div style="display:flex;align-items:center;gap:12px;margin:14px 0 18px;">
+        <label for="k" style="font-size:13px;color:var(--muted);">Chunks pulled in (top-k)</label>
+        <input id="k" type="range" min="1" max="5" value="2" step="1"/>
+        <span id="kout" style="font-size:14px;font-weight:600;min-width:16px;">2</span>
+      </div>
+      <div id="docs"></div>
+      <div class="legend">
+        <span><span class="sw" style="background:var(--accent)"></span>retrieved — can be cited</span>
+        <span><span class="sw" style="background:var(--dim)"></span>invisible to the answer</span>
+      </div>
+      <p class="summary" id="summary"></p>
+      <p class="hint">A real system compares meaning with embeddings; this demo uses simple word overlap,
+        but the behaviour — only the top few survive, wording steers it, other groups' uploads can bleed in — is the same.</p>
+      <div class="concepts">
+        <p><strong>Silent failure.</strong> A faded row is the answer that existed in the library but was
+          never retrieved — so the model never saw it, and answers confidently anyway.</p>
+        <p><strong>The gap it can't retrieve.</strong> It only ever sees a few snippets, never the whole
+          picture, so it is weakest at “what is missing?” questions — the answer is the space between
+          sources, and no single chunk contains it.</p>
+        <p><strong>Needle vs. haystack.</strong> A smaller top-k hands the model just the likely needles;
+          a larger one adds more hay it can lose the answer in.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="acc">
+    <button class="acc-head" aria-expanded="false">
+      <span class="acc-n">2</span>
+      <span class="acc-t"><span class="acc-title">Six things it isn't doing</span><span class="acc-sub">Flip each myth to the mechanism underneath.</span></span>
+      <span class="acc-chev">&#9656;</span>
+    </button>
+    <div class="acc-body">
+      <p class="lead">Each card is something easy to believe about HelpMe. Tap it to see what is
+        actually happening underneath.</p>
+      <div class="grid" id="cards"></div>
+    </div>
+  </div>
+
+  <div class="acc">
+    <button class="acc-head" aria-expanded="false">
+      <span class="acc-n">3</span>
+      <span class="acc-t"><span class="acc-title">It didn't “choose”</span><span class="acc-sub">Swap the human verbs for what is really happening.</span></span>
+      <span class="acc-chev">&#9656;</span>
+    </button>
+    <div class="acc-body">
+      <p class="lead">We describe HelpMe as if it had intentions — it <em>chose</em>, <em>assumed</em>,
+        <em>agreed</em>. Reveal the mechanical version to see why that matters: it turns an unanswerable
+        question about motive into an answerable one about retrieval.</p>
+      <div id="rewriter"></div>
+    </div>
+  </div>
+
+  <div class="acc">
+    <button class="acc-head" aria-expanded="false">
+      <span class="acc-n">4</span>
+      <span class="acc-t"><span class="acc-title">Prompts that earn their keep</span><span class="acc-sub">The moves to keep, and the ones to build next.</span></span>
+      <span class="acc-chev">&#9656;</span>
+    </button>
+    <div class="acc-body">
+      <p class="lead">The habits the cohort already showed, and the ones worth building next. Tick what
+        you have done; copy a prompt to try the rest.</p>
+      <div id="checklist"></div>
+    </div>
+  </div>
+
+  <div class="acc">
+    <button class="acc-head" aria-expanded="false">
+      <span class="acc-n">5</span>
+      <span class="acc-t"><span class="acc-title">Why retrieve at all?</span><span class="acc-sub">RAG vs. long context — the real trade-off.</span></span>
+      <span class="acc-chev">&#9656;</span>
+    </button>
+    <div class="acc-body">
+      <p class="lead">HelpMe pulls a few chunks. The tools you use outside class increasingly take the
+        whole text in one giant context window instead. Same goal, different failure modes — and that
+        choice is a real engineering decision, not just clunky vs. slick.</p>
+      <div class="compare">
+        <div class="opt">
+          <h3>Retrieval — what HelpMe does</h3>
+          <div class="lab s">Strengths</div>
+          <ul>
+            <li>Scales to a huge, shared, always-updating library.</li>
+            <li>Cheap per question — it reads only a few passages.</li>
+            <li>Returns citations you can trace back to a source.</li>
+          </ul>
+          <div class="lab w">Weaknesses</div>
+          <ul>
+            <li>Can miss or mis-rank a source — the silent failure in panel 1.</li>
+            <li>Only ever sees the few chunks it pulled.</li>
+            <li>Quality depends on how you word the query.</li>
+          </ul>
+        </div>
+        <div class="opt">
+          <h3>Long context — paste it all in</h3>
+          <div class="lab s">Strengths</div>
+          <ul>
+            <li>Sees the whole text at once — no retrieval misses.</li>
+            <li>Can reason across a full document, and spot what is missing.</li>
+            <li>No vector database to build or maintain.</li>
+          </ul>
+          <div class="lab w">Weaknesses</div>
+          <ul>
+            <li>A hard limit on how much text fits.</li>
+            <li>Costs more as you add text, and runs slower.</li>
+            <li>“Lost in the middle” — it under-uses material buried mid-prompt, and gives no automatic citations.</li>
+          </ul>
+        </div>
+      </div>
+      <p class="hint">The point is not which wins — it is that each fails differently. HelpMe's missed
+        sources are the price of a shared, citable, ever-growing library; pasting everything into a
+        chatbot trades that for a size cap, higher cost, and the lost-in-the-middle problem.</p>
+      <p style="font-size:14px;margin:10px 0 0;"><a href="https://www.youtube.com/watch?v=UabBYexBD4k" target="_blank" rel="noopener">Go deeper: “Is RAG still needed?” — IBM Technology, 11 min &rarr;</a></p>
+    </div>
+  </div>
+
+  <div class="acc meta">
+    <button class="acc-head" aria-expanded="false">
+      <span class="acc-n">&#10022;</span>
+      <span class="acc-t"><span class="acc-title">How this was made</span></span>
+      <span class="acc-chev">&#9656;</span>
+    </button>
+    <div class="acc-body">
+      <div class="group-h">What I did</div>
+      <ul class="princ">
+        <li>Uploaded the fifteen Move 1 submissions with student names removed.</li>
+        <li>Read them for patterns.</li>
+        <li>Saw a set of recurring misconceptions about how HelpMe works.</li>
+        <li>Guided an AI assistant to synthesise those findings.</li>
+        <li>Decided the ideas would land better as an interactive tool than a written summary.</li>
+        <li>Used Claude Cowork to design and build the tool — one self-contained HTML file, no dependencies.</li>
+      </ul>
+    </div>
+  </div>
+
+  <footer>ETEC 531 · Doing ~ HelpMe · Built from the Move 1 cohort findings.</footer>
+</div>
+
+<script>
+/* ---------- 1. simulator ---------- */
+const corpus=[
+ {t:"Cotter (2019) — Playing the visibility game",g:"your group",terms:["instagram","visibility","visible","algorithm","algorithms","influencer","feed","ranking","gatekeeping","posts","social","media","online"]},
+ {t:"Carpenter et al. (2020) — How educators use Instagram",g:"your group",terms:["instagram","educators","teaching","teachers","learning","professional","classroom","social","media","online","use","used"]},
+ {t:"Greenhow & Lewin (2016) — Formal and informal learning",g:"your group",terms:["instagram","learning","formal","informal","boundaries","social","media","education","online"]},
+ {t:"Lou & Yuan (2019) — Influencer marketing and trust",g:"your group",terms:["instagram","influencer","marketing","trust","consumer","credibility","branded","message","value","social","media"]},
+ {t:"Resnick et al. (2009) — Scratch: programming for all",g:"another group",terms:["scratch","programming","coding","blocks","creativity","remix","code","children"]}
+];
+const presets=[
+ "How is Instagram used for teaching and learning?",
+ "How do algorithms decide which posts are visible?",
+ "Does influencer marketing build consumer trust?",
+ "Creativity and remix in coding"
+];
+const stop=new Set(["the","and","of","how","do","does","what","are","is","to","in","for","some","make","made","less","more","a","by","on","with","which","that","into","us","our"]);
+const pe=document.getElementById("presets");
+presets.forEach(p=>{const b=document.createElement("button");b.className="preset";b.textContent=p;
+  b.onclick=()=>{document.getElementById("q").value=p;render();};pe.appendChild(b);});
+const docsEl=document.getElementById("docs");
+corpus.forEach((d,i)=>{const row=document.createElement("div");row.className="doc";row.id="d"+i;
+  row.innerHTML='<span class="title">'+d.t+'</span><div class="track"><div class="fill" id="f'+i+'"></div></div><span class="badge" id="b'+i+'"></span>';
+  docsEl.appendChild(row);});
+function tokenize(s){return (s.toLowerCase().match(/[a-z]+/g)||[]).filter(w=>w.length>2&&!stop.has(w));}
+function score(qt,terms){let s=0;qt.forEach(t=>terms.forEach(term=>{if(term===t)s+=2;else if(term.includes(t)||t.includes(term))s+=1;}));return s;}
+function render(){
+ const q=document.getElementById("q").value;const k=+document.getElementById("k").value;
+ const qt=tokenize(q);
+ const scored=corpus.map((d,i)=>({i,s:score(qt,d.terms),d}));
+ const max=Math.max(1,...scored.map(o=>o.s));
+ const ranked=scored.filter(o=>o.s>0).sort((a,b)=>b.s-a.s);
+ const retrieved=new Set(ranked.slice(0,k).map(o=>o.i));
+ let bleed=false;
+ scored.forEach(o=>{
+  const f=document.getElementById("f"+o.i);const b=document.getElementById("b"+o.i);
+  const row=document.getElementById("d"+o.i);const on=retrieved.has(o.i);
+  f.style.width=Math.round((o.s/max)*100)+"%";
+  row.className="doc "+(on?"on":"off");
+  if(on){b.textContent=o.d.g==="another group"?"✓ pulled in · other group":"✓ pulled in";
+    b.className="badge bon";
+    if(o.d.g==="another group")bleed=true;}
+  else{b.textContent="left out";b.className="badge boff";}
+ });
+ const n=retrieved.size;const matches=ranked.length;
+ let msg;
+ if(qt.length===0){msg="Type or pick a query — only the chunks that rank highest get pulled into the answer.";}
+ else{
+   msg="Pulled "+n+" of "+corpus.length+" sources into the answer.";
+   if(matches>n){const g=matches-n;msg+=" "+g+" relevant "+(g===1?"source":"sources")+" ranked too low and got left out — a silent failure. Raise the slider to pull "+(g===1?"it":"them")+" in.";}
+   else if(matches<corpus.length){msg+=" Only "+matches+" matched this wording, so a higher top-k can't surface more.";}
+   if(bleed){msg+=" One came from another group's uploads — the shared index bleeds across teams.";}
+ }
+ document.getElementById("summary").textContent=msg;
+}
+document.getElementById("q").addEventListener("input",render);
+document.getElementById("k").addEventListener("input",e=>{document.getElementById("kout").textContent=e.target.value;render();});
+document.getElementById("q").value=presets[0];
+render();
+
+/* ---------- 2. flip cards ---------- */
+const myths=[
+ {m:"It can explain why it skipped a source.",x:"It keeps no record of its own retrieval. Any reason it gives is generated after the fact to sound plausible."},
+ {m:"Leaving a source out was a decision.",x:"The source simply did not rank in the top few. Nothing chose to exclude it."},
+ {m:"Hedging words mean it searched carefully.",x:"“might” and “may” are writing style, not a readout of how much of the library it covered."},
+ {m:"Listing a citation in my prompt gives it the source.",x:"It only sees the title unless the full text is indexed, so it fills the rest with guesswork."},
+ {m:"Its self-audit shows what it really did.",x:"The audit is generated too — a useful-looking summary, not a true record of what happened."},
+ {m:"A citation proves the author supports the claim.",x:"A citation only marks where a chunk came from; it can still misread it. This one the cohort got right — keep verifying."}
+];
+const cardsEl=document.getElementById("cards");
+myths.forEach(c=>{const d=document.createElement("div");d.className="card";
+ d.innerHTML='<button aria-label="Flip card"><span class="myth">'+c.m+'</span>'+
+   '<div class="answer"><span class="tagx">What’s actually happening</span><span class="mech">'+c.x+'</span></div>'+
+   '<span class="flip"><span class="now">Tap to reveal &rarr;</span><span class="back">&larr; Tap to flip back</span></span></button>';
+ d.querySelector("button").onclick=()=>d.classList.toggle("flipped");
+ cardsEl.appendChild(d);});
+
+/* ---------- 3. rewriter ---------- */
+const rewrites=[
+ {h:["HelpMe ","chose"," to exclude Cotter."],x:"Cotter's chunks did not rank in the top few, so they were never retrieved.",w:"“Chose” implies a decision it could explain. “Did not rank” points to retrieval, which you can actually steer."},
+ {h:["It ","assumed"," the question was about educators."],x:"It generated text from the most similar chunks, which happened to emphasise educators.",w:"It holds no assumptions. It completes patterns from whatever ranked highest."},
+ {h:["It ","agreed"," with my argument."],x:"It generated a continuation that echoed my framing — agreement is the default, not a judgement.",w:"Echoing you is the cheap path for the model; it is not evidence you are right."},
+ {h:["It ","admitted"," it was overconfident."],x:"It produced a self-audit; that is generated text, not introspection.",w:"A confession-shaped paragraph is still generation, not a record of what it did."}
+];
+const rwEl=document.getElementById("rewriter");
+rewrites.forEach(r=>{const d=document.createElement("div");d.className="rw";
+ d.innerHTML='<span class="human">'+r.h[0]+'<span class="verb">'+r.h[1]+'</span>'+r.h[2]+'</span>'+
+   '<button class="btn">Show mechanical version</button>'+
+   '<div class="mechbox"><strong>'+r.x+'</strong><div class="why">'+r.w+'</div></div>';
+ const box=d.querySelector(".mechbox");const btn=d.querySelector(".btn");
+ btn.onclick=()=>{const open=box.style.display==="block";box.style.display=open?"none":"block";
+   btn.textContent=open?"Show mechanical version":"Hide";};
+ rwEl.appendChild(d);});
+
+/* ---------- 4. checklist ---------- */
+const keep=[
+ {t:"Go back to the sources",d:"Check its claims against the original readings instead of trusting them."},
+ {t:"Name the gap, then ask why",d:"Tell it which source it skipped and ask why — the second answer is sharper."},
+ {t:"Ask it to self-audit",d:"“List what you retrieved, left out, and overstated.”"},
+ {t:"Prompt for the counter-argument",d:"Ask what is missing, or for the strongest objection, instead of asking it to agree."},
+ {t:"Probe systematically",d:"Vary your prompts across attempts and watch how the behaviour changes."}
+];
+const build=[
+ {t:"Steer retrieval, don't just diagnose it",d:"Re-query to pull a missing source in.",p:"According to Cotter (2019), how do algorithms make some posts less visible?",lim:"Naming the source biases retrieval toward it, but doesn't guarantee its chunks rank in the top few — check it actually gets cited."},
+ {t:"Check that citations are real",d:"Confirm an unfamiliar reference is an actual paper.",p:"List the full title, authors, and year for every source you just cited.",lim:"It can produce a clean-looking title and year for a paper that doesn't exist. Confirm it yourself before trusting it."},
+ {t:"Name the mechanism",d:"Explain gaps with retrieval, not motive.",p:"Which of our sources ranked highest for that query, and which were left out?",lim:"It keeps no real retrieval log, so this ranking is reconstructed after the fact — directional, not exact."},
+ {t:"Probe the persona",d:"Surface the tutor instructions it is following.",p:"What instructions are you following in how you answer me?",lim:"It paraphrases its likely instructions; it can't quote its true system prompt, so read this as a guess."},
+ {t:"Set scope and compare tools",d:"Pin the corpus, then compare with a general chatbot.",p:"For each claim, name which of our four Instagram sources it comes from and give a short quote. If you can't, label that claim ‘not from these sources.’",lim:"The instruction nudges scope but can't fence retrieval, and the flagging is generated, not verified — spot-check the quotes against the actual papers."}
+];
+const clEl=document.getElementById("checklist");
+let saved={};try{saved=JSON.parse(localStorage.getItem("helpme-chk")||"{}");}catch(e){saved={};}
+function save(){try{localStorage.setItem("helpme-chk",JSON.stringify(saved));}catch(e){}}
+function addGroup(title,items,prefix){
+ const h=document.createElement("div");h.className="group-h";h.textContent=title;clEl.appendChild(h);
+ items.forEach((it,i)=>{const id=prefix+i;const row=document.createElement("div");row.className="chk";
+  const checked=saved[id]?"checked":"";
+  let tryhtml=it.p?'<div class="try"><code>'+it.p+'</code><button class="copy" data-p="'+it.p.replace(/"/g,"&quot;")+'">copy</button></div>':"";
+  let limhtml=it.lim?'<div class="lim"><strong>Output to watch:</strong> '+it.lim+'</div>':"";
+  row.innerHTML='<input type="checkbox" id="'+id+'" '+checked+'><div class="body"><span class="ttl">'+it.t+'</span><div class="desc">'+it.d+'</div>'+tryhtml+limhtml+'</div>';
+  row.querySelector("input").addEventListener("change",e=>{saved[id]=e.target.checked;save();});
+  clEl.appendChild(row);});
+}
+addGroup("Moves to keep and spread",keep,"keep");
+addGroup("Moves to build next",build,"build");
+clEl.addEventListener("click",e=>{if(e.target.classList.contains("copy")){
+  const txt=e.target.getAttribute("data-p");
+  navigator.clipboard&&navigator.clipboard.writeText(txt);
+  const o=e.target.textContent;e.target.textContent="copied";setTimeout(()=>e.target.textContent=o,1200);}});
+
+/* ---------- accordion ---------- */
+document.querySelectorAll(".acc-head").forEach(h=>{
+  h.addEventListener("click",()=>{const acc=h.parentElement;const open=acc.classList.toggle("open");
+    h.setAttribute("aria-expanded",open?"true":"false");});
+});
+</script>
+</body>
+</html>
