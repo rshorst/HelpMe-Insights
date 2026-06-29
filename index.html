@@ -1,3 +1,4 @@
+ · HTML
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -145,14 +146,12 @@
 </head>
 <body>
 <div class="wrap">
-
   <header>
     <div class="eyebrow">ETEC 531 · interactive companion</div>
     <h1>How HelpMe actually works</h1>
     <p class="sub">Poke at it; that is the point. Tap a panel to open it.</p>
     <div class="rule"></div>
   </header>
-
   <div class="seam">
     <div class="seam-h">The proposition: Seam-ful AI for learning</div>
     <p class="seam-p">HelpMe can't out-muscle ChatGPT or Claude, and it shouldn't try. The big models are
@@ -160,11 +159,12 @@
       for understanding, not output, and for that a tool you can see through beats a more capable one you can't.</p>
     <p class="seam-p">Legible failure can be a very good teacher. Let's identify the friction in the system
       that maps onto a real mechanism. RAG matters because retrieval is a layer whose seams you can actually
-      inspect — the chunks, the citations, what got pulled and what got left out. You cannot meaningfully inspect a model's weights as a learner, but you can inspect retrieval: the chunks, the citations, what got pulled in, and what got left out. HelpMe's silent failures are visible weaknesses, and
-      visible weakness is where understanding gets built — judgment you then carry into the seamless tools whose
-      weaknesses and silent failures won't be as visible. Build skills here that can be used elsewhere.</p>
+      inspect — the chunks, the citations, what got pulled and what got left out. You cannot meaningfully
+      inspect a model's weights as a learner, but you can inspect retrieval. HelpMe's silent failures are
+      visible weaknesses, and visible weakness is where understanding gets built — judgment you then carry
+      into the seamless tools whose weaknesses and silent failures won't be as visible. Build skills here
+      that can be used elsewhere.</p>
   </div>
-
   <div class="acc">
     <button class="acc-head" aria-expanded="false">
       <span class="acc-n">1</span>
@@ -238,7 +238,6 @@
       </div>
     </div>
   </div>
-
   <div class="acc">
     <button class="acc-head" aria-expanded="false">
       <span class="acc-n">2</span>
@@ -251,7 +250,6 @@
       <div class="grid" id="cards"></div>
     </div>
   </div>
-
   <div class="acc">
     <button class="acc-head" aria-expanded="false">
       <span class="acc-n">3</span>
@@ -265,7 +263,6 @@
       <div id="rewriter"></div>
     </div>
   </div>
-
   <div class="acc">
     <button class="acc-head" aria-expanded="false">
       <span class="acc-n">4</span>
@@ -277,7 +274,6 @@
       <div id="checklist"></div>
     </div>
   </div>
-
   <div class="acc">
     <button class="acc-head" aria-expanded="false">
       <span class="acc-n">5</span>
@@ -326,7 +322,6 @@
       <p style="font-size:14px;margin:10px 0 0;"><a href="https://www.youtube.com/watch?v=UabBYexBD4k" target="_blank" rel="noopener">Go deeper: “Is RAG still needed?” — IBM Technology, 11 min &rarr;</a></p>
     </div>
   </div>
-
   <div class="acc meta">
     <button class="acc-head" aria-expanded="false">
       <span class="acc-n">&#10022;</span>
@@ -337,7 +332,6 @@
       <div class="group-h">What I did</div>
       <ul class="princ">
         <li>Developed from recurring teaching patterns.</li>
-        <li>Read them for patterns.</li>
         <li>Saw a set of recurring misconceptions about how HelpMe works.</li>
         <li>Guided an AI assistant to synthesise those findings.</li>
         <li>Decided the ideas would land better as an interactive tool than a written summary.</li>
@@ -345,18 +339,16 @@
       </ul>
     </div>
   </div>
-
-  <footer>ETEC 531 · Doing ~ HelpMe · Built from the Move 1 cohort findings.</footer>
+  <footer>ETEC 531 · Doing ~ HelpMe · A teaching artifact.</footer>
 </div>
-
 <script>
 /* ---------- 1. simulator ---------- */
 const corpus=[
- {t:"Cotter (2019) — Playing the visibility game",g:"your group",terms:["instagram","visibility","visible","algorithm","algorithms","influencer","feed","ranking","gatekeeping","posts","social","media","online"]},
- {t:"Carpenter et al. (2020) — How educators use Instagram",g:"your group",terms:["instagram","educators","teaching","teachers","learning","professional","classroom","social","media","online","use","used"]},
- {t:"Greenhow & Lewin (2016) — Formal and informal learning",g:"your group",terms:["instagram","learning","formal","informal","boundaries","social","media","education","online"]},
- {t:"Lou & Yuan (2019) — Influencer marketing and trust",g:"your group",terms:["instagram","influencer","marketing","trust","consumer","credibility","branded","message","value","social","media"]},
- {t:"Resnick et al. (2009) — Scratch: programming for all",g:"another group",terms:["scratch","programming","coding","blocks","creativity","remix","code","children"]}
+ {t:"Cotter (2019) — Playing the visibility game",g:"your sources",terms:["instagram","visibility","visible","algorithm","algorithms","influencer","feed","ranking","gatekeeping","posts","social","media","online"]},
+ {t:"Carpenter et al. (2020) — How educators use Instagram",g:"your sources",terms:["instagram","educators","teaching","teachers","learning","professional","classroom","social","media","online","use","used"]},
+ {t:"Greenhow & Lewin (2016) — Formal and informal learning",g:"your sources",terms:["instagram","learning","formal","informal","boundaries","social","media","education","online"]},
+ {t:"Lou & Yuan (2019) — Influencer marketing and trust",g:"your sources",terms:["instagram","influencer","marketing","trust","consumer","credibility","branded","message","value","social","media"]},
+ {t:"Resnick et al. (2009) — Scratch: programming for all",g:"another collection",terms:["scratch","programming","coding","blocks","creativity","remix","code","children"]}
 ];
 const presets=[
  "How is Instagram used for teaching and learning?",
@@ -387,9 +379,9 @@ function render(){
   const row=document.getElementById("d"+o.i);const on=retrieved.has(o.i);
   f.style.width=Math.round((o.s/max)*100)+"%";
   row.className="doc "+(on?"on":"off");
-  if(on){b.textContent=o.d.g==="another group"?"✓ pulled in · other group":"✓ pulled in";
+  if(on){b.textContent=o.d.g==="another collection"?"✓ pulled in · another collection":"✓ pulled in";
     b.className="badge bon";
-    if(o.d.g==="another group")bleed=true;}
+    if(o.d.g==="another collection")bleed=true;}
   else{b.textContent="left out";b.className="badge boff";}
  });
  const n=retrieved.size;const matches=ranked.length;
@@ -399,7 +391,7 @@ function render(){
    msg="Pulled "+n+" of "+corpus.length+" sources into the answer.";
    if(matches>n){const g=matches-n;msg+=" "+g+" relevant "+(g===1?"source":"sources")+" ranked too low and got left out — a silent failure. Raise the slider to pull "+(g===1?"it":"them")+" in.";}
    else if(matches<corpus.length){msg+=" Only "+matches+" matched this wording, so a higher top-k can't surface more.";}
-   if(bleed){msg+=" One came from another group's uploads — the shared index bleeds across teams.";}
+   if(bleed){msg+=" One came from another collection in the shared index — retrieval can surface material beyond your own sources.";}
  }
  document.getElementById("summary").textContent=msg;
 }
@@ -407,7 +399,6 @@ document.getElementById("q").addEventListener("input",render);
 document.getElementById("k").addEventListener("input",e=>{document.getElementById("kout").textContent=e.target.value;render();});
 document.getElementById("q").value=presets[0];
 render();
-
 /* ---------- 2. flip cards ---------- */
 const myths=[
  {m:"It can explain why it skipped a source.",x:"It does not have reliable introspective access to its own retrieval process. Any reason it gives you may be generated after the fact."},
@@ -424,7 +415,6 @@ myths.forEach(c=>{const d=document.createElement("div");d.className="card";
    '<span class="flip"><span class="now">Tap to reveal &rarr;</span><span class="back">&larr; Tap to flip back</span></span></button>';
  d.querySelector("button").onclick=()=>d.classList.toggle("flipped");
  cardsEl.appendChild(d);});
-
 /* ---------- 3. rewriter ---------- */
 const rewrites=[
  {h:["HelpMe ","chose"," to exclude Cotter."],x:"Cotter's chunks did not rank in the top few, so they were never retrieved.",w:"“Chose” implies a decision it could explain. “Did not rank” points to retrieval, which you can actually steer."},
@@ -441,7 +431,6 @@ rewrites.forEach(r=>{const d=document.createElement("div");d.className="rw";
  btn.onclick=()=>{const open=box.style.display==="block";box.style.display=open?"none":"block";
    btn.textContent=open?"Show mechanical version":"Hide";};
  rwEl.appendChild(d);});
-
 /* ---------- 4. checklist ---------- */
 const keep=[
  {t:"Go back to the sources",d:"Check its claims against the original readings instead of trusting them."},
@@ -476,7 +465,6 @@ clEl.addEventListener("click",e=>{if(e.target.classList.contains("copy")){
   const txt=e.target.getAttribute("data-p");
   navigator.clipboard&&navigator.clipboard.writeText(txt);
   const o=e.target.textContent;e.target.textContent="copied";setTimeout(()=>e.target.textContent=o,1200);}});
-
 /* ---------- accordion ---------- */
 document.querySelectorAll(".acc-head").forEach(h=>{
   h.addEventListener("click",()=>{const acc=h.parentElement;const open=acc.classList.toggle("open");
