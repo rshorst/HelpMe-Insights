@@ -160,8 +160,7 @@
       for understanding, not output, and for that a tool you can see through beats a more capable one you can't.</p>
     <p class="seam-p">Legible failure can be a very good teacher. Let's identify the friction in the system
       that maps onto a real mechanism. RAG matters because retrieval is a layer whose seams you can actually
-      inspect — the chunks, the citations, what got pulled and what got left out. You can't see through a
-      model's weights, but you can see through retrieval. HelpMe's silent failures are visible weaknesses, and
+      inspect — the chunks, the citations, what got pulled and what got left out. You cannot meaningfully inspect a model's weights as a learner, but you can inspect retrieval: the chunks, the citations, what got pulled in, and what got left out. HelpMe's silent failures are visible weaknesses, and
       visible weakness is where understanding gets built — judgment you then carry into the seamless tools whose
       weaknesses and silent failures won't be as visible. Build skills here that can be used elsewhere.</p>
   </div>
@@ -227,8 +226,7 @@
         <span><span class="sw" style="background:var(--dim)"></span>invisible to the answer</span>
       </div>
       <p class="summary" id="summary"></p>
-      <p class="hint">A real system compares meaning with embeddings; this demo uses simple word overlap,
-        but the behaviour — only the top few survive, wording steers it, other groups' uploads can bleed in — is the same.</p>
+      <p class="hint">A real system compares meaning with embeddings; this demo uses simple word overlap, but the pattern is similar: wording steers what gets surfaced, only the top few survive, and relevant material can still be missed.</p>
       <div class="concepts">
         <p><strong>Silent failure.</strong> A faded row is the answer that existed in the library but was
           never retrieved — so the model never saw it, and answers confidently anyway.</p>
@@ -312,7 +310,7 @@
           <div class="lab s">Strengths</div>
           <ul>
             <li>Sees the whole text at once — no retrieval misses.</li>
-            <li>Can reason across a full document, and spot what is missing.</li>
+            <li>Can work across a full document more directly, which may make some absences easier to notice, though it can still miss, flatten, or under-use material.</li>
             <li>No vector database to build or maintain.</li>
           </ul>
           <div class="lab w">Weaknesses</div>
@@ -413,7 +411,7 @@ render();
 
 /* ---------- 2. flip cards ---------- */
 const myths=[
- {m:"It can explain why it skipped a source.",x:"It keeps no record of its own retrieval. Any reason it gives is generated after the fact to sound plausible."},
+ {m:"It can explain why it skipped a source.",x:"It does not have reliable introspective access to its own retrieval process. Any reason it gives you may be generated after the fact."},
  {m:"Leaving a source out was a decision.",x:"The source simply did not rank in the top few. Nothing chose to exclude it."},
  {m:"Hedging words mean it searched carefully.",x:"“might” and “may” are writing style, not a readout of how much of the library it covered."},
  {m:"Listing a citation in my prompt gives it the source.",x:"It only sees the title unless the full text is indexed, so it fills the rest with guesswork."},
